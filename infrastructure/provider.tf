@@ -9,7 +9,7 @@ terraform {
 provider "aws" {
   profile = "terraform"
   assume_role {
-    role_arn     = "arn:aws:iam::790250078024:role/Test-Role"
+    role_arn     = "arn:aws:iam::790250078024:role/terraform-role"
     session_name = "AWS-Session"
   }
 }
