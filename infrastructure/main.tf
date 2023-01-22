@@ -1,13 +1,14 @@
 module "vpc" {
-  source                = "./modules/vpc"
-  cidr_block            = "10.0.0.0/16"
-  private_subnet_1_cidr = "10.0.1.0/24"
-  private_subnet_2_cidr = "10.0.2.0/24"
-  private_subnet_3_cidr = "10.0.3.0/24"
-  public_subnet_1_cidr  = "10.0.4.0/24"
-  public_subnet_2_cidr  = "10.0.5.0/24"
-  public_subnet_3_cidr  = "10.0.6.0/24"
-
+  # source                = "git::ssh://git@gitlab.com/abohmeed/terraform-modules.git//vpc?ref=main"
+  source                 = "terraform-aws-modules/vpc/aws"
+  version                = "3.19.0"
+  cidr                   = "10.0.0.0/16"
+  azs                    = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+  private_subnets        = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets         = ["10.0.4.0/24", "10.0.5.0/24", "10.0.6.0/24"]
+  enable_nat_gateway     = true
+  single_nat_gateway     = true
+  one_nat_gateway_per_az = false
 }
 output "vpc_id" {
   value = module.vpc.vpc_id
