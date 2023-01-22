@@ -1,4 +1,10 @@
 terraform {
+  backend "s3" {
+    bucket         = "moderndevops-terraform-state"
+    key            = "terraform-state"
+    region         = "eu-west-1"
+    dynamodb_table = "Terraform-backend-lock"
+  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
