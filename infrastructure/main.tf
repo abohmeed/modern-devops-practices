@@ -1,21 +1,26 @@
 locals {
-  cidr            = "10.0.0.0/16"
-  azs             = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  ubuntu_ami      = "ami-015423a987dafce81"
+  cidr             = "10.0.0.0/16"
+  azs              = ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  database_subnets = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
+  db_name          = "moderndevopsdb"
+  ubuntu_ami       = "ami-015423a987dafce81"
 }
 module "vpc" {
   # source                = "git::ssh://git@gitlab.com/abohmeed/terraform-modules.git//vpc?ref=main"
-  source                 = "terraform-aws-modules/vpc/aws"
-  version                = "3.19.0"
-  cidr                   = local.cidr
-  azs                    = local.azs
-  private_subnets        = local.private_subnets
-  public_subnets         = local.public_subnets
-  enable_nat_gateway     = true
-  single_nat_gateway     = true
-  one_nat_gateway_per_az = false
+  source                       = "terraform-aws-modules/vpc/aws"
+  version                      = "3.19.0"
+  cidr                         = local.cidr
+  azs                          = local.azs
+  private_subnets              = local.private_subnets
+  public_subnets               = local.public_subnets
+  enable_nat_gateway           = true
+  single_nat_gateway           = true
+  one_nat_gateway_per_az       = false
+  create_database_subnet_group = true
+  database_subnet_group_name   = "db"
+  database_subnets             = local.database_subnets
 }
 # Security groups
 module "auth_service_sg" {
@@ -33,7 +38,7 @@ module "auth_service_sg" {
       cidr_blocks = local.cidr
     }
   ]
-    egress_with_cidr_blocks = [
+  egress_with_cidr_blocks = [
     {
       from_port   = 0
       to_port     = 0
@@ -58,7 +63,7 @@ module "ui_service_sg" {
       cidr_blocks = local.cidr
     }
   ]
-    egress_with_cidr_blocks = [
+  egress_with_cidr_blocks = [
     {
       from_port   = 0
       to_port     = 0
@@ -83,7 +88,7 @@ module "weather_service_sg" {
       cidr_blocks = local.cidr
     }
   ]
-    egress_with_cidr_blocks = [
+  egress_with_cidr_blocks = [
     {
       from_port   = 0
       to_port     = 0
@@ -108,13 +113,30 @@ module "ssh_sg" {
       cidr_blocks = "0.0.0.0/0"
     }
   ]
-    egress_with_cidr_blocks = [
+  egress_with_cidr_blocks = [
     {
       from_port   = 0
       to_port     = 0
       protocol    = -1
       description = "Allow all outbound connections"
       cidr_blocks = "0.0.0.0/0"
+    },
+  ]
+}
+module "db_sg" {
+  source      = "terraform-aws-modules/security-group/aws"
+  version     = "4.17.1"
+  name        = "db"
+  description = "Security group for the RDS instance"
+  vpc_id      = module.vpc.vpc_id
+  # ingress
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 3306
+      to_port     = 3306
+      protocol    = "tcp"
+      description = "MySQL access from within VPC"
+      cidr_blocks = local.cidr
     },
   ]
 }
@@ -174,4 +196,36 @@ module "bastion_ec2_instance" {
   monitoring             = true
   vpc_security_group_ids = [module.ssh_sg.security_group_id]
   subnet_id              = element(module.vpc.public_subnets, 0)
+}
+# RDS database
+module "db" {
+  source                          = "terraform-aws-modules/rds/aws"
+  version                         = "5.3.0"
+  identifier                      = local.db_name
+  engine                          = "mysql"
+  engine_version                  = "8.0"
+  family                          = "mysql8.0" # DB parameter group
+  major_engine_version            = "8.0"      # DB option group
+  instance_class                  = "db.t4g.small"
+  allocated_storage               = 5
+  max_allocated_storage           = 5
+  db_name                         = local.db_name
+  username                        = "dbadmin"
+  port                            = 3306
+  multi_az                        = false
+  db_subnet_group_name            = module.vpc.database_subnet_group
+  vpc_security_group_ids          = [module.db_sg.security_group_id]
+  maintenance_window              = "Mon:00:00-Mon:03:00"
+  backup_window                   = "03:00-06:00"
+  enabled_cloudwatch_logs_exports = ["general"]
+  create_cloudwatch_log_group     = true
+  skip_final_snapshot             = true
+  deletion_protection             = false
+}
+output "db_password" {
+  value     = module.db.db_instance_password
+  sensitive = true
+}
+output "db_endpoint" {
+  value = module.db.db_instance_endpoint
 }
