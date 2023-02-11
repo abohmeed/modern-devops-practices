@@ -6,6 +6,7 @@ locals {
   database_subnets = ["10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"]
   db_name          = "moderndevopsdb"
   ubuntu_ami       = "ami-015423a987dafce81"
+  db_username      = "dbadmin"
 }
 module "vpc" {
   # source                = "git::ssh://git@gitlab.com/abohmeed/terraform-modules.git//vpc?ref=main"
@@ -210,7 +211,7 @@ module "db" {
   allocated_storage               = 5
   max_allocated_storage           = 5
   db_name                         = local.db_name
-  username                        = "dbadmin"
+  username                        = local.db_username
   port                            = 3306
   multi_az                        = false
   db_subnet_group_name            = module.vpc.database_subnet_group
@@ -222,10 +223,21 @@ module "db" {
   skip_final_snapshot             = true
   deletion_protection             = false
 }
-output "db_password" {
-  value     = module.db.db_instance_password
-  sensitive = true
-}
-output "db_endpoint" {
+# Secrets Manager and Parameter Store
+resource "aws_ssm_parameter" "db_endpoint" {
+  name  = "moderndevops.db.endpoint"
+  type  = "String"
   value = module.db.db_instance_endpoint
+}
+resource "aws_ssm_parameter" "db_username" {
+  name  = "moderndevops.db.username"
+  type  = "String"
+  value = local.db_username
+}
+resource "aws_secretsmanager_secret" "db_password" {
+  name = "moderndevops.db.password"
+}
+resource "aws_secretsmanager_secret_version" "db_password" {
+  secret_id     = aws_secretsmanager_secret.db_password.id
+  secret_string = module.db.db_instance_password
 }
