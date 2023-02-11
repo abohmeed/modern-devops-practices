@@ -301,3 +301,20 @@ module "alb" {
     }
   ]
 }
+resource "aws_route53_zone" "moderndevops" {
+  name = "moderndevops.fakharany.com"
+}
+output "zone-ns" {
+  value = aws_route53_zone.moderndevops.name_servers
+}
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.moderndevops.zone_id
+  name    = "moderndevops.fakharany.com"
+  type    = "A"
+
+  alias {
+    name                   = module.alb.lb_dns_name
+    zone_id                = module.alb.lb_zone_id
+    evaluate_target_health = true
+  }
+}
