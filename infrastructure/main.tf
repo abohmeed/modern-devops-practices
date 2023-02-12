@@ -305,10 +305,10 @@ resource "aws_route53_zone" "weatherapp" {
   name = "weatherapp.fakharany.com"
 }
 output "zone-ns" {
-  value = aws_route53_zone.moderndevops.name_servers
+  value = aws_route53_zone.weatherapp.name_servers
 }
 resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.moderndevops.zone_id
+  zone_id = aws_route53_zone.weatherapp.zone_id
   name    = "weatherapp.fakharany.com"
   type    = "A"
 
