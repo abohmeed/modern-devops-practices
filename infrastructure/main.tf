@@ -318,10 +318,10 @@ resource "aws_route53_zone" "weatherapp" {
   name = "weatherapp.fakharany.com"
 }
 output "zone-ns" {
-  value = aws_route53_zone.moderndevops.name_servers
+  value = aws_route53_zone.weatherapp.name_servers
 }
 resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.moderndevops.zone_id
+  zone_id = aws_route53_zone.weatherapp.zone_id
   name    = "weatherapp.fakharany.com"
   type    = "A"
 
@@ -334,10 +334,10 @@ resource "aws_route53_record" "www" {
 module "acm" {
   source      = "terraform-aws-modules/acm/aws"
   version     = "4.3.2"
-  domain_name = "moderndevops.fakharany.com"
-  zone_id     = aws_route53_zone.moderndevops.id
+  domain_name = "weatherapp.fakharany.com"
+  zone_id     = aws_route53_zone.weatherapp.id
   subject_alternative_names = [
-    "*.moderndevops.fakharany.com"
+    "*.weatherapp.fakharany.com"
   ]
   wait_for_validation = true
 }
