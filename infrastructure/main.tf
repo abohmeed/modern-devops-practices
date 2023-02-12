@@ -301,15 +301,15 @@ module "alb" {
     }
   ]
 }
-resource "aws_route53_zone" "moderndevops" {
-  name = "moderndevops.fakharany.com"
+resource "aws_route53_zone" "weatherapp" {
+  name = "weatherapp.fakharany.com"
 }
 output "zone-ns" {
   value = aws_route53_zone.moderndevops.name_servers
 }
 resource "aws_route53_record" "www" {
   zone_id = aws_route53_zone.moderndevops.zone_id
-  name    = "moderndevops.fakharany.com"
+  name    = "weatherapp.fakharany.com"
   type    = "A"
 
   alias {
