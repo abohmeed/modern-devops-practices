@@ -144,53 +144,60 @@ module "db_sg" {
 # EC2 instances
 resource "aws_key_pair" "devops" {
   key_name   = "devops-key"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7e8uiDcqsG3HcQMwHZ+BQK5Eouvrd2XQW78yDbxvg/pNqLdoeEr+DW/gR8T0ym1kcYGnxLf4mSsTNhzyGfrmeMk0c0lGsXunbpvne96PWkr/5NMRoj9qswoNtfK672QiNucDLCue63tgvou9/hlGLKU8uH29ZSd4QwsbgEtvOigF023lJsOBWSVAng/fFE3wZkhZB3Us29T/DHsTol2h6Zs2yzkM+u/fp8g9Hcm7DQdsbMYQ+R9O8AsVLfHzeqX/MqDGGlqub7n/TZipz7x7wf4FNRnPHWaMKs8PXM2DyVswXTucMZATr8ClFBbSHKU+4vgaolUbBbhIm+FP4CW0t+4PgNwyISyBoBv/b4SGUzaRzbLQEdsVXp8A/srNn5zecswYzGR9icPkNXINNJemW2L7OPJLX2SUBpMwNU4JkiuYdp9GR+n9XqH5LVlOLaW/cT7h4aKKmy4UHRbfL+t89moe05Izz180AIZDVpLdWvWptW2pkc1x852BP3dJnNKU="
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCVLr7hpzAd8xLa4JTP3aR1fsi2XIbDuA1FYSdI0SaRCNy+cTBoEwYmF5FAFryrvC8+jgvNlcjZ6N7nLMnfrxgZHi+VAzdV0IXPbmj6Qpp0NE7zMaGFofIu1y2MciadfLoApUmsBvgE6GXSNgL8kindv7ZDa6pTC/6eg45SUkX5P9wYgX3Xdz4ZToqJOdhtjZ2mHIlR485DCqRvuOSyD6aquRNm/YKhStZdF6eBVNFMoZejPhWUeEdA/4jnv6adc/2z2kO36fQKxqOyv0OSNnwrWJN7ujv6zbEsxwTZ0rk90UYNvvUIcxFsBb8+kYeNY4rmOYhl2Sy2dCAy+qe5GVFvV8lkdFdfC7V8V2mSi3x99mqM1MPQcOxf7xecNhsFVunwJRfEOKsskSesvhBqgL8TAXzIcAq/hMYHaj0BQdw6rOCZSt5M6dTrdrXdCpM+eYjiMxcqQHTndSZDeZV9UXoH5dnzD14zx7OIfRWOr4hLrpjWzIiq2DmJ3eH0WWlqc0s="
 }
 module "auth_ec2_instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "4.3.0"
-
-  name = "auth-instance"
-
+  source                 = "terraform-aws-modules/ec2-instance/aws"
+  version                = "4.3.0"
+  name                   = "auth-instance"
   ami                    = local.ubuntu_ami
   instance_type          = "t3.micro"
   key_name               = "devops-key"
   monitoring             = true
   vpc_security_group_ids = [module.auth_service_sg.security_group_id, module.ssh_sg.security_group_id]
   subnet_id              = element(module.vpc.private_subnets, 0)
+  tags = {
+    Environment = "dev"
+    Role        = "auth"
+    Application = "weatherapp"
+  }
 }
 module "ui_ec2_instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "4.3.0"
-
-  name = "ui-instance"
-
+  source                 = "terraform-aws-modules/ec2-instance/aws"
+  version                = "4.3.0"
+  name                   = "ui-instance"
   ami                    = local.ubuntu_ami
   instance_type          = "t3.micro"
   key_name               = "devops-key"
   monitoring             = true
   vpc_security_group_ids = [module.ui_service_sg.security_group_id, module.ssh_sg.security_group_id]
   subnet_id              = element(module.vpc.private_subnets, 1)
+  tags = {
+    Environment = "dev"
+    Role        = "ui"
+    Application = "weatherapp"
+  }
 }
 module "weather_ec2_instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "4.3.0"
-
-  name = "weather-instance"
-
+  source                 = "terraform-aws-modules/ec2-instance/aws"
+  version                = "4.3.0"
+  name                   = "weather-instance"
   ami                    = local.ubuntu_ami
   instance_type          = "t3.micro"
   key_name               = "devops-key"
   monitoring             = true
   vpc_security_group_ids = [module.weather_service_sg.security_group_id, module.ssh_sg.security_group_id]
   subnet_id              = element(module.vpc.private_subnets, 2)
+  tags = {
+    Environment = "dev"
+    Role        = "weather"
+    Application = "weatherapp"
+  }
 }
 module "bastion_ec2_instance" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "4.3.0"
-
-  name = "bastion-instance"
-
+  source                 = "terraform-aws-modules/ec2-instance/aws"
+  version                = "4.3.0"
+  name                   = "bastion-instance"
   ami                    = local.ubuntu_ami
   instance_type          = "t3.micro"
   key_name               = "devops-key"
@@ -199,145 +206,143 @@ module "bastion_ec2_instance" {
   subnet_id              = element(module.vpc.public_subnets, 0)
 }
 # RDS database
-module "db" {
-  source                          = "terraform-aws-modules/rds/aws"
-  version                         = "5.3.0"
-  identifier                      = local.db_name
-  engine                          = "mysql"
-  engine_version                  = "8.0"
-  family                          = "mysql8.0" # DB parameter group
-  major_engine_version            = "8.0"      # DB option group
-  instance_class                  = "db.t4g.small"
-  allocated_storage               = 5
-  max_allocated_storage           = 5
-  db_name                         = local.db_name
-  username                        = local.db_username
-  port                            = 3306
-  multi_az                        = false
-  db_subnet_group_name            = module.vpc.database_subnet_group
-  vpc_security_group_ids          = [module.db_sg.security_group_id]
-  maintenance_window              = "Mon:00:00-Mon:03:00"
-  backup_window                   = "03:00-06:00"
-  enabled_cloudwatch_logs_exports = ["general"]
-  create_cloudwatch_log_group     = true
-  skip_final_snapshot             = true
-  deletion_protection             = false
-}
-# Secrets Manager and Parameter Store
-resource "aws_ssm_parameter" "db_endpoint" {
-  name  = "moderndevops.db.endpoint"
-  type  = "String"
-  value = module.db.db_instance_endpoint
-}
-resource "aws_ssm_parameter" "db_username" {
-  name  = "moderndevops.db.username"
-  type  = "String"
-  value = local.db_username
-}
-resource "aws_secretsmanager_secret" "db_password" {
-  name = "moderndevops.db.password"
-}
-resource "aws_secretsmanager_secret_version" "db_password" {
-  secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = module.db.db_instance_password
-}
-# The load balancer
-module "alb" {
-  source             = "terraform-aws-modules/alb/aws"
-  version            = "8.3.1"
-  load_balancer_type = "application"
-  vpc_id             = module.vpc.vpc_id
-  subnets            = module.vpc.public_subnets
-  security_groups    = [module.vpc.default_security_group_id]
-  security_group_rules = {
-    ingress_all_http = {
-      type        = "ingress"
-      from_port   = 80
-      to_port     = 3000
-      protocol    = "tcp"
-      description = "HTTP web traffic"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-  http_tcp_listeners = [
-    {
-      port        = 80
-      protocol    = "HTTP"
-      action_type = "redirect"
-      redirect = {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
-    }
-  ]
-  https_listeners = [
-    {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = module.acm.acm_certificate_arn
-      target_group_index = 0
-    }
-  ]
-  target_groups = [
-    {
-      name_prefix          = "h1"
-      backend_protocol     = "HTTP"
-      backend_port         = 3000
-      target_type          = "instance"
-      deregistration_delay = 10
-      health_check = {
-        enabled             = true
-        interval            = 30
-        path                = "/"
-        port                = "traffic-port"
-        healthy_threshold   = 3
-        unhealthy_threshold = 3
-        timeout             = 6
-        protocol            = "HTTP"
-        matcher             = "200-399"
-      }
-      protocol_version = "HTTP1"
-      targets = {
-        ui = {
-          target_id = module.ui_ec2_instance.id
-          port      = 3000
-        }
-      }
-    }
-  ]
-}
-resource "aws_route53_zone" "weatherapp" {
-  name = "weatherapp.fakharany.com"
-}
-output "zone-ns" {
-  value = aws_route53_zone.weatherapp.name_servers
-}
-resource "aws_route53_record" "www" {
-  zone_id = aws_route53_zone.weatherapp.zone_id
-  name    = "weatherapp.fakharany.com"
-  type    = "A"
+# module "db" {
+#   source                          = "terraform-aws-modules/rds/aws"
+#   version                         = "5.3.0"
+#   identifier                      = local.db_name
+#   engine                          = "mysql"
+#   engine_version                  = "8.0"
+#   family                          = "mysql8.0" # DB parameter group
+#   major_engine_version            = "8.0"      # DB option group
+#   instance_class                  = "db.t4g.small"
+#   allocated_storage               = 5
+#   max_allocated_storage           = 5
+#   db_name                         = local.db_name
+#   username                        = local.db_username
+#   port                            = 3306
+#   multi_az                        = false
+#   db_subnet_group_name            = module.vpc.database_subnet_group
+#   vpc_security_group_ids          = [module.db_sg.security_group_id]
+#   maintenance_window              = "Mon:00:00-Mon:03:00"
+#   backup_window                   = "03:00-06:00"
+#   enabled_cloudwatch_logs_exports = ["general"]
+#   create_cloudwatch_log_group     = true
+#   skip_final_snapshot             = true
+#   deletion_protection             = false
+# }
+# # Secrets Manager and Parameter Store
+# resource "aws_ssm_parameter" "db_endpoint" {
+#   name  = "moderndevops.db.endpoint"
+#   type  = "String"
+#   value = module.db.db_instance_endpoint
+# }
+# resource "aws_ssm_parameter" "db_username" {
+#   name  = "moderndevops.db.username"
+#   type  = "String"
+#   value = local.db_username
+# }
+# resource "aws_ssm_parameter" "db_password" {
+#   name  = "moderndevops.db.password"
+#   type  = "SecureString"
+#   value = module.db.db_instance_password
+# }
+# # The load balancer
+# module "alb" {
+#   source             = "terraform-aws-modules/alb/aws"
+#   version            = "8.3.1"
+#   load_balancer_type = "application"
+#   vpc_id             = module.vpc.vpc_id
+#   subnets            = module.vpc.public_subnets
+#   security_groups    = [module.vpc.default_security_group_id]
+#   security_group_rules = {
+#     ingress_all_http = {
+#       type        = "ingress"
+#       from_port   = 80
+#       to_port     = 3000
+#       protocol    = "tcp"
+#       description = "HTTP web traffic"
+#       cidr_blocks = ["0.0.0.0/0"]
+#     }
+#     egress_all = {
+#       type        = "egress"
+#       from_port   = 0
+#       to_port     = 0
+#       protocol    = "-1"
+#       cidr_blocks = ["0.0.0.0/0"]
+#     }
+#   }
+#   http_tcp_listeners = [
+#     {
+#       port        = 80
+#       protocol    = "HTTP"
+#       action_type = "redirect"
+#       redirect = {
+#         port        = "443"
+#         protocol    = "HTTPS"
+#         status_code = "HTTP_301"
+#       }
+#     }
+#   ]
+#   https_listeners = [
+#     {
+#       port               = 443
+#       protocol           = "HTTPS"
+#       certificate_arn    = module.acm.acm_certificate_arn
+#       target_group_index = 0
+#     }
+#   ]
+#   target_groups = [
+#     {
+#       name_prefix          = "h1"
+#       backend_protocol     = "HTTP"
+#       backend_port         = 3000
+#       target_type          = "instance"
+#       deregistration_delay = 10
+#       health_check = {
+#         enabled             = true
+#         interval            = 30
+#         path                = "/"
+#         port                = "traffic-port"
+#         healthy_threshold   = 3
+#         unhealthy_threshold = 3
+#         timeout             = 6
+#         protocol            = "HTTP"
+#         matcher             = "200-399"
+#       }
+#       protocol_version = "HTTP1"
+#       targets = {
+#         ui = {
+#           target_id = module.ui_ec2_instance.id
+#           port      = 3000
+#         }
+#       }
+#     }
+#   ]
+# }
+# resource "aws_route53_zone" "weatherapp" {
+#   name = "weatherapp.fakharany.com"
+# }
+# output "zone-ns" {
+#   value = aws_route53_zone.weatherapp.name_servers
+# }
+# resource "aws_route53_record" "www" {
+#   zone_id = aws_route53_zone.weatherapp.zone_id
+#   name    = "weatherapp.fakharany.com"
+#   type    = "A"
 
-  alias {
-    name                   = module.alb.lb_dns_name
-    zone_id                = module.alb.lb_zone_id
-    evaluate_target_health = true
-  }
-}
-module "acm" {
-  source      = "terraform-aws-modules/acm/aws"
-  version     = "4.3.2"
-  domain_name = "weatherapp.fakharany.com"
-  zone_id     = aws_route53_zone.weatherapp.id
-  subject_alternative_names = [
-    "*.weatherapp.fakharany.com"
-  ]
-  wait_for_validation = true
-}
+#   alias {
+#     name                   = module.alb.lb_dns_name
+#     zone_id                = module.alb.lb_zone_id
+#     evaluate_target_health = true
+#   }
+# }
+# module "acm" {
+#   source      = "terraform-aws-modules/acm/aws"
+#   version     = "4.3.2"
+#   domain_name = "weatherapp.fakharany.com"
+#   zone_id     = aws_route53_zone.weatherapp.id
+#   subject_alternative_names = [
+#     "*.weatherapp.fakharany.com"
+#   ]
+#   wait_for_validation = true
+# }
