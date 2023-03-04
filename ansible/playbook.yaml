@@ -1,0 +1,23 @@
+- hosts: tag_Role_ui
+  become: true
+  tasks:
+    - name: Deploy Nginx
+      apt:
+        name: nginx
+        state: latest
+    - name: Confiure Nginx port
+      ansible.builtin.lineinfile:
+        path: /etc/nginx/sites-enabled/default
+        regexp: '^\s*listen\s*80'
+        line: listen 3000 default_server;
+      notify:
+        - restart nginx
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+  handlers:
+    - name: restart nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
