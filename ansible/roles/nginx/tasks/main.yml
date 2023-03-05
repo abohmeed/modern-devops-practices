@@ -1,0 +1,17 @@
+---
+# tasks file for nginx
+- name: Deploy Nginx
+  apt:
+    name: nginx
+    state: latest
+- name: Configure Nginx port
+  ansible.builtin.lineinfile:
+    path: /etc/nginx/sites-enabled/default
+    regexp: '^\s*listen\s*80'
+    line: listen {{nginx_port}} default_server;
+  notify:
+    - restart nginx
+- name: start nginx
+  service:
+    name: nginx
+    state: started
