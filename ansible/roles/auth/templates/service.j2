@@ -1,0 +1,14 @@
+[Unit]
+Description=auth service
+
+[Service]
+Environment=DB_HOST={{db_hostname}}
+Environment=DB_NAME=moderndevopsdb
+Environment=DB_USER=authuser
+Environment=DB_PASSWORD=password
+User=authuser
+Group=authuser
+ExecStart=/app/auth
+
+[Install]
+WantedBy=multi-user.target

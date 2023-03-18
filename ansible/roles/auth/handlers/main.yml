@@ -1,0 +1,15 @@
+---
+# handlers file for auth
+- name: Apply the necessary ownership and permissions
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: authuser
+    mode: "0700"
+    recurse: true
+- name: Start the auth service
+  ansible.builtin.service:
+    name: auth
+    state: started
+    enabled: yes
+    daemon_reload: yes

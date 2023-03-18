@@ -1,0 +1,58 @@
+---
+# tasks file for auth
+- name: Create the auth user
+  ansible.builtin.user:
+    name: authuser
+- name: Create the app directory and apply the necessary permissions
+  ansible.builtin.file:
+    path: /app
+    state: directory
+    owner: authuser
+    group: authuser
+    mode: '0700'
+    recurse: true
+- name: Clone the weatherapp repo
+  ansible.builtin.git:
+    repo: https://gitlab.com/abohmeed/moderndevops-weatherapp.git
+    dest: /tmp/weatherapp
+    single_branch: yes
+    version: main
+- name: Build and deploy the auth service
+  ansible.builtin.shell:
+    cmd: "{{ ansible_local.golang.general.home }}/bin/go get -v ./... && {{ ansible_local.golang.general.home }}/bin/go build -o /app -v ./..."
+    chdir: /tmp/weatherapp/auth/src/main
+  notify: Apply the necessary ownership and permissions
+- name: Get the database hostname
+  set_fact:
+    db_hostname: "{{ lookup('aws_ssm','moderndevops.db.endpoint').split(':').0 }}"
+- name: Get the database username
+  set_fact:
+    db_username: "{{ lookup('aws_ssm','moderndevops.db.username') }}"
+- name: Get the database password
+  set_fact:
+    db_password: "{{ lookup('aws_ssm','moderndevops.db.password')  }}"
+- name: Install MySQL client
+  apt:
+    name: mysql-client
+    state: latest
+- name: Deploy the SQL file for user creation
+  ansible.builtin.template:
+    src: user.sql.j2
+    dest: /app/user.sql
+    owner: authuser
+    group: authuser
+    mode: '0400'
+- name: Create the app DB user
+  shell:
+    cmd: "mysql -h {{db_hostname}} -u {{db_username}} -p{{db_password}} < /app/user.sql"
+  no_log: true
+- name: Create the auth systemd service
+  ansible.builtin.template:
+    src: service.j2
+    dest: /etc/systemd/system/auth.service
+    owner: root
+    group: root
+  notify: Start the auth service
+
+
+

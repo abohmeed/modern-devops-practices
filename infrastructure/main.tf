@@ -206,47 +206,47 @@ module "bastion_ec2_instance" {
   subnet_id              = element(module.vpc.public_subnets, 0)
 }
 # RDS database
-# module "db" {
-#   source                          = "terraform-aws-modules/rds/aws"
-#   version                         = "5.3.0"
-#   identifier                      = local.db_name
-#   engine                          = "mysql"
-#   engine_version                  = "8.0"
-#   family                          = "mysql8.0" # DB parameter group
-#   major_engine_version            = "8.0"      # DB option group
-#   instance_class                  = "db.t4g.small"
-#   allocated_storage               = 5
-#   max_allocated_storage           = 5
-#   db_name                         = local.db_name
-#   username                        = local.db_username
-#   port                            = 3306
-#   multi_az                        = false
-#   db_subnet_group_name            = module.vpc.database_subnet_group
-#   vpc_security_group_ids          = [module.db_sg.security_group_id]
-#   maintenance_window              = "Mon:00:00-Mon:03:00"
-#   backup_window                   = "03:00-06:00"
-#   enabled_cloudwatch_logs_exports = ["general"]
-#   create_cloudwatch_log_group     = true
-#   skip_final_snapshot             = true
-#   deletion_protection             = false
-# }
-# # Secrets Manager and Parameter Store
-# resource "aws_ssm_parameter" "db_endpoint" {
-#   name  = "moderndevops.db.endpoint"
-#   type  = "String"
-#   value = module.db.db_instance_endpoint
-# }
-# resource "aws_ssm_parameter" "db_username" {
-#   name  = "moderndevops.db.username"
-#   type  = "String"
-#   value = local.db_username
-# }
-# resource "aws_ssm_parameter" "db_password" {
-#   name  = "moderndevops.db.password"
-#   type  = "SecureString"
-#   value = module.db.db_instance_password
-# }
-# # The load balancer
+module "db" {
+  source                          = "terraform-aws-modules/rds/aws"
+  version                         = "5.3.0"
+  identifier                      = local.db_name
+  engine                          = "mysql"
+  engine_version                  = "8.0"
+  family                          = "mysql8.0" # DB parameter group
+  major_engine_version            = "8.0"      # DB option group
+  instance_class                  = "db.t4g.small"
+  allocated_storage               = 5
+  max_allocated_storage           = 5
+  db_name                         = local.db_name
+  username                        = local.db_username
+  port                            = 3306
+  multi_az                        = false
+  db_subnet_group_name            = module.vpc.database_subnet_group
+  vpc_security_group_ids          = [module.db_sg.security_group_id]
+  maintenance_window              = "Mon:00:00-Mon:03:00"
+  backup_window                   = "03:00-06:00"
+  enabled_cloudwatch_logs_exports = ["general"]
+  create_cloudwatch_log_group     = true
+  skip_final_snapshot             = true
+  deletion_protection             = false
+}
+# Secrets Manager and Parameter Store
+resource "aws_ssm_parameter" "db_endpoint" {
+  name  = "moderndevops.db.endpoint"
+  type  = "String"
+  value = module.db.db_instance_endpoint
+}
+resource "aws_ssm_parameter" "db_username" {
+  name  = "moderndevops.db.username"
+  type  = "String"
+  value = local.db_username
+}
+resource "aws_ssm_parameter" "db_password" {
+  name  = "moderndevops.db.password"
+  type  = "SecureString"
+  value = module.db.db_instance_password
+}
+# The load balancer
 # module "alb" {
 #   source             = "terraform-aws-modules/alb/aws"
 #   version            = "8.3.1"

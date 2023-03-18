@@ -1,4 +1,5 @@
-- hosts: tag_Role_ui
+- hosts: tag_Role_auth
   become: true
   roles:
-   - role: nginx
+    - role: gantsign.golang
+    - role: auth
