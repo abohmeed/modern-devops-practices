@@ -2,9 +2,10 @@
 # handlers file for auth
 - name: Apply the necessary ownership and permissions
   ansible.builtin.file:
-    path: /app
+    path: "{{ app.directory }}"
     state: directory
-    owner: authuser
+    owner: "{{ app.user }}"
+    group: "{{ app.group }}"
     mode: "0700"
     recurse: true
 - name: Start the auth service

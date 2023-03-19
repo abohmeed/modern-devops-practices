@@ -1,2 +1,21 @@
 ---
 # defaults file for auth
+app:
+  user: authuser
+  group: authuser
+  directory: /app
+repo_directory: /tmp/weatherapp
+db:
+  name: moderndevopsdb
+  user: authuser
+  password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          37663530636431363666313461363138646263333732333231313139326531313739363037323065
+          3838363131303332313832663739393462313061373966380a666363613466363365323239623963
+          63346364343063383131663737386161393730353334323333663035376264653763633965333165
+          3637633539303630340a386237333837663931626334303865383265356538303034623962363838
+          3361
+ssm:
+  db_host: moderndevops.db.endpoint
+  db_admin: moderndevops.db.username
+  db_password: moderndevops.db.password

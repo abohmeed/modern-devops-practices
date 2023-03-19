@@ -2,35 +2,35 @@
 # tasks file for auth
 - name: Create the auth user
   ansible.builtin.user:
-    name: authuser
+    name: "{{ app.user}}"
 - name: Create the app directory and apply the necessary permissions
   ansible.builtin.file:
-    path: /app
+    path: "{{ app.directory }}"
     state: directory
-    owner: authuser
-    group: authuser
-    mode: '0700'
+    owner: "{{ app.user}}"
+    group: "{{ app.group}}"
+    mode: "0700"
     recurse: true
 - name: Clone the weatherapp repo
   ansible.builtin.git:
     repo: https://gitlab.com/abohmeed/moderndevops-weatherapp.git
-    dest: /tmp/weatherapp
+    dest: "{{ repo_directory }}"
     single_branch: yes
     version: main
 - name: Build and deploy the auth service
   ansible.builtin.shell:
-    cmd: "{{ ansible_local.golang.general.home }}/bin/go get -v ./... && {{ ansible_local.golang.general.home }}/bin/go build -o /app -v ./..."
-    chdir: /tmp/weatherapp/auth/src/main
+    cmd: "{{ ansible_local.golang.general.home }}/bin/go get -v ./... && {{ ansible_local.golang.general.home }}/bin/go build -o {{ app.directory }} -v ./..."
+    chdir: "{{ repo_directory }}/auth/src/main"
   notify: Apply the necessary ownership and permissions
 - name: Get the database hostname
   set_fact:
-    db_hostname: "{{ lookup('aws_ssm','moderndevops.db.endpoint').split(':').0 }}"
+    db_hostname: "{{ lookup('aws_ssm',ssm.db_host).split(':').0 }}"
 - name: Get the database username
   set_fact:
-    db_username: "{{ lookup('aws_ssm','moderndevops.db.username') }}"
+    db_username: "{{ lookup('aws_ssm',ssm.db_admin) }}"
 - name: Get the database password
   set_fact:
-    db_password: "{{ lookup('aws_ssm','moderndevops.db.password')  }}"
+    db_password: "{{ lookup('aws_ssm',ssm.db_password) }}"
 - name: Install MySQL client
   apt:
     name: mysql-client
@@ -38,13 +38,13 @@
 - name: Deploy the SQL file for user creation
   ansible.builtin.template:
     src: user.sql.j2
-    dest: /app/user.sql
-    owner: authuser
-    group: authuser
-    mode: '0400'
+    dest: "{{ app.directory }}/user.sql"
+    owner: "{{ app.user}}"
+    group: "{{ app.group}}"
+    mode: "0400"
 - name: Create the app DB user
   shell:
-    cmd: "mysql -h {{db_hostname}} -u {{db_username}} -p{{db_password}} < /app/user.sql"
+    cmd: "mysql -h {{db_hostname}} -u {{db_username}} -p{{db_password}} < {{ app.directory }}/user.sql && rm -f {{ app.directory }}/user.sql"
   no_log: true
 - name: Create the auth systemd service
   ansible.builtin.template:
@@ -53,6 +53,3 @@
     owner: root
     group: root
   notify: Start the auth service
-
-
-
